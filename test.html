@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Ant Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .warning { color: orange; }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #canvas-test {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐜 Ant Simulation Test</h1>
+    
+    <div class="test-results">
+        <h2>Test Results</h2>
+        <div id="test-output"></div>
+    </div>
+    
+    <div class="test-results">
+        <h2>Manual Tests</h2>
+        <button onclick="testAudioContext()">Test AudioContext</button>
+        <button onclick="testSoundManager()">Test Sound Manager</button>
+        <button onclick="testCanvasSize()">Test Canvas</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+    
+    <canvas id="canvas-test" width="400" height="300"></canvas>
+    
+    <script src="sound-manager.js"></script>
+    <script>
+        let testOutput = document.getElementById('test-output');
+        let testResults = [];
+        
+        function log(message, type = 'info') {
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = message;
+            testOutput.appendChild(span);
+            testResults.push({message, type});
+        }
+        
+        function testAudioContext() {
+            log('Testing AudioContext...', 'info');
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                log('✓ AudioContext created successfully', 'pass');
+                
+                if (audioContext.state === 'suspended') {
+                    log('⚠ AudioContext is suspended (normal for no user interaction)', 'warning');
+                } else {
+                    log('✓ AudioContext is running', 'pass');
+                }
+                
+                audioContext.close();
+                log('✓ AudioContext closed', 'pass');
+            } catch (error) {
+                log('✗ AudioContext failed: ' + error.message, 'fail');
+            }
+        }
+        
+        function testSoundManager() {
+            log('Testing SoundManager...', 'info');
+            
+            try {
+                const soundManager = new SoundManager();
+                log('✓ SoundManager created successfully', 'pass');
+                
+                if (soundManager.audioContext) {
+                    log('✓ AudioContext is available in SoundManager', 'pass');
+                } else {
+                    log('⚠ AudioContext not yet initialized (waiting for user interaction)', 'warning');
+                }
+                
+                // Test sound playback (should not throw errors)
+                soundManager.playSound('click');
+                log('✓ playSound method executed without errors', 'pass');
+                
+            } catch (error) {
+                log('✗ SoundManager failed: ' + error.message, 'fail');
+            }
+        }
+        
+        function testCanvasSize() {
+            log('Testing Canvas...', 'info');
+            
+            const canvas = document.getElementById('canvas-test');
+            if (canvas) {
+                log('✓ Canvas element found', 'pass');
+                
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    log('✓ Canvas 2D context available', 'pass');
+                    
+                    // Test drawing
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(10, 10, 50, 50);
+                    log('✓ Canvas drawing test successful', 'pass');
+                } else {
+                    log('✗ Canvas 2D context not available', 'fail');
+                }
+            } else {
+                log('✗ Canvas element not found', 'fail');
+            }
+        }
+        
+        function runAllTests() {
+            testOutput.innerHTML = '';
+            testResults = [];
+            
+            log('=== Running All Tests ===', 'info');
+            
+            testAudioContext();
+            testSoundManager();
+            testCanvasSize();
+            
+            const passCount = testResults.filter(r => r.type === 'pass').length;
+            const failCount = testResults.filter(r => r.type === 'fail').length;
+            const warningCount = testResults.filter(r => r.type === 'warning').length;
+            
+            log(`\n=== Test Summary ===`, 'info');
+            log(`✓ Passed: ${passCount}`, 'pass');
+            log(`✗ Failed: ${failCount}`, failCount > 0 ? 'fail' : 'pass');
+            log(`⚠ Warnings: ${warningCount}`, warningCount > 0 ? 'warning' : 'pass');
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 500);
+        });
+    </script>
+</body>
+</html>

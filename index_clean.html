@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>🐜 شبیه‌سازی مورچه هوشمند - اکوسیستم مصنوعی</title>
+    <meta name="description" content="شبیه‌سازی جذاب و تعاملی مورچه‌های هوشمند با قابلیت تولید مثل و رشد کلونی">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐜</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        #simulation-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            background: transparent;
+        }
+        
+        #stats-button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(103, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        #stats-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(103, 126, 234, 0.4);
+        }
+        
+        #stats-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            color: white;
+        }
+        
+        .close-button {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        
+        .control-button {
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .mobile-quick-actions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1500;
+        }
+        
+        .quick-action {
+            background: linear-gradient(135deg, rgba(103, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action:hover {
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 95vw;
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+            }
+            
+            .stat {
+                padding: 15px;
+            }
+            
+            #stats-button {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas شبیه‌سازی -->
+    <canvas id="simulation-canvas"></canvas>
+    
+    <!-- دکمه آمار -->
+    <div id="stats-button" onclick="toggleStatsModal()" title="مشاهده آمار و اطلاعات">
+        📊
+    </div>
+
+    <!-- Modal آمار -->
+    <div id="stats-modal">
+        <div class="modal-content">
+            <!-- دکمه بستن -->
+            <button class="close-button" onclick="toggleStatsModal()">✕</button>
+
+            <h2 style="text-align: center; margin-bottom: 30px;">📊 آمار و اطلاعات کلونی</h2>
+            
+            <!-- آمار مورچه‌ها -->
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-icon">🏠</div>
+                    <div class="stat-label">غذای لانه</div>
+                    <div class="stat-value" id="stored-food">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-label">انرژی نر</div>
+                    <div class="stat-value" id="male-ant-energy">100</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">💫</div>
+                    <div class="stat-label">انرژی ماده</div>
+                    <div class="stat-value" id="female-ant-energy">100</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">👷</div>
+                    <div class="stat-label">کارگرها</div>
+                    <div class="stat-value" id="worker-count">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">🥚</div>
+                    <div class="stat-label">لاروها</div>
+                    <div class="stat-value" id="larvae-count">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">🕒</div>
+                    <div class="stat-label">سن نر</div>
+                    <div class="stat-value" id="male-ant-age">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-label">سن ماده</div>
+                    <div class="stat-value" id="female-ant-age">0</div>
+                </div>
+            </div>
+
+            <!-- کنترل‌های بازی -->
+            <h3 style="text-align: center; margin-bottom: 15px;">🎮 کنترل‌های بازی</h3>
+            <div class="controls">
+                <button id="add-food" class="control-button" style="background: linear-gradient(135deg, #ff6b6b, #ee5a52);">
+                    🍯 افزودن غذا
+                </button>
+                <button id="add-obstacle" class="control-button" style="background: linear-gradient(135deg, #4ecdc4, #44a08d);">
+                    🪨 افزودن مانع
+                </button>
+                <button id="restart" class="control-button" style="background: linear-gradient(135deg, #ffa726, #fb8c00);">
+                    🔄 شروع مجدد
+                </button>
+            </div>
+
+            <!-- راهنمای بازی -->
+            <h3 style="text-align: center; margin-bottom: 15px;">📖 راهنمای بازی</h3>
+            <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; font-size: 14px; line-height: 1.6;">
+                <p>🖱️ <strong>کلیک کردن:</strong> غذا اضافه می‌کند</p>
+                <p>📱 <strong>لمس (موبایل):</strong> غذا اضافه می‌کند</p>
+                <p>🐜 <strong>مورچه‌ها:</strong> خودکار غذا جمع می‌کنند</p>
+                <p>🥚 <strong>تولید مثل:</strong> هر 2 دقیقه اتفاق می‌افتد</p>
+                <p>👷 <strong>کارگرها:</strong> از لاروها متولد می‌شوند</p>
+                <p>🏠 <strong>لانه:</strong> مرکز فعالیت مورچه‌ها</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- دکمه‌های کنترل سریع موبایل -->
+    <div class="mobile-quick-actions">
+        <button class="quick-action" onclick="world.addRandomFood(3)" title="افزودن غذا">🍯</button>
+        <button class="quick-action" onclick="toggleRotation()" title="چرخش 90 درجه" id="rotate-toggle">↻</button>
+        <button class="quick-action" onclick="toggleDebugInfo()" title="Debug mode">🔍</button>
+        <button class="quick-action" onclick="world.addRandomObstacles(1)" title="افزودن مانع">🪨</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="world.js"></script>
+    <script src="food.js"></script>
+    <script src="ant.js"></script>
+    <script src="larva.js"></script>
+    <script src="environmental-effects.js"></script>
+    <script src="main_clean.js"></script>
+</body>
+</html>
